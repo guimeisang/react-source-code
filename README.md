@@ -36,8 +36,14 @@ React 内部实现的一套状态更新机制，支持任务不同的优先级�
 和遍历树一样
 
 - beginWork
+具体看src/Core/beginWork文件，并且是区别mount和update的
+更具不同的类型，创建fiber，并且遍历树，并且节点上可能会存在effectTag
 
 - completeWork
+给有effectTag的Fiber节点执行对应操作，根据fiber不同类型处理
+分为update和mount：mount会将fiber实例化成dom，并且两个过程都会处理属性，事件等
+最后，将有effectTag的fiber挂载在父级的fiber的effectList末尾，并返回一个workInProgress
+
 
 第四：commit阶段
 
