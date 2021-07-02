@@ -78,3 +78,75 @@ Diff 算法的整体逻辑会经历两轮遍历
 - this.forceUpdate
 - useState
 - useReducer
+
+触发状态更新(根据场景调用不同方法)
+--> 创建 Update 对象（接下来三节详解）
+--> 从 fiber 到 root（markUpdateLaneFromFiberToRoot）
+--> 调度更新（ensureRootIsScheduled）
+--> render 阶段（`performSyncWorkOnRoot` 或 `performConcurrentWorkOnRoot`）
+--> commit 阶段（`commitRoot`）
+
+Update：
+分类有
+
+```js
+ReactDOM.render-- - HostRoot;
+this.setState-- - ClassComponent;
+this.forceUpdate-- - ClassComponent;
+useState-- - FunctionComponent;
+useReducer-- - FunctionComponent;
+```
+
+ClassComponent 与 HostRoot 共用一套 Update 结构
+
+```ts
+const update: Update<*> = {
+  eventTime, // 任务时间
+  lane, // 优先级
+  suspenseConfig, // Suspense 相关，暂不关注
+  tag: UpdateState, // 更新的类型，包括 UpdateState | ReplaceState | ForceUpdate | CaptureUpdate
+  payload: null, // 更新挂载的数据
+  callback: null, // 更新的回调函数
+  next: null, // 与其他Update行程链表
+};
+```
+
+FunctionComponent 是另外一套 Update 结构
+
+UpdateQueue:
+
+```ts
+const queue: UpdateQueue<State> = {
+  baseState: fiber.memoizedState, // 原来的状态
+  firstBaseUpdate: null, // 插队的部分头
+  lastBaseUpdate: null, // 插队的部分尾巴
+  shared: {
+    // 原来那部分
+    pending: null,
+  },
+  effects: null, // 副作用，就是回调函数啦
+};
+```
+
+render 阶段的 Update 其实是一个链表，state 经过 update 链表得到新的 state；
+该新的 state 更新不同的 JSX 对象
+通过 DIFF 算法，在 commit 阶段渲染在页面
+渲染完成之后，workInProgress Fiber 树变为 current Fiber 树，整个更新流程结束
+
+深入理解优先级
+
+1. 对用户心中的优先级研究：
+
+生命周期方法：同步执行。
+
+受控的用户输入：比如输入框内输入文字，同步执行。
+
+交互事件：比如动画，高优先级执行。
+
+其他：比如数据请求，低优先级执行。
+
+2.
+
+ReactDOM.render
+
+this.setState
