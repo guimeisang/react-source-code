@@ -145,8 +145,36 @@ render 阶段的 Update 其实是一个链表，state 经过 update 链表得到
 
 其他：比如数据请求，低优先级执行。
 
-2.
-
 ReactDOM.render
 
-this.setState
+创建 fiberRootNode、rootFiber、updateQueue（`legacyCreateRootFromDOMContainer`）-->
+创建 Update 对象（`updateContainer`）-->
+从 fiber 到 root（`markUpdateLaneFromFiberToRoot`）-->
+调度更新（`ensureRootIsScheduled`）-->
+render 阶段（`performSyncWorkOnRoot` 或 `performConcurrentWorkOnRoot`）-->
+commit 阶段（`commitRoot`）
+
+this.setState 整个代码
+
+```ts
+Component.prototype.setState = function (partialState, callback) {
+  if (
+    !(
+      typeof partialState === "object" ||
+      typeof partialState === "function" ||
+      partialState === null
+    )
+  ) {
+    throw Error(
+      "setState(...): takes an object of state variables to update or a function which returns an object of state variables."
+    );
+    this.updater.enqueueSetState(this, partialState, callback, "setState");
+  }
+};
+```
+
+```ts
+enqueueSetState(inst, payload, callback) {}
+
+
+```
