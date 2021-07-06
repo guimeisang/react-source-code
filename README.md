@@ -176,5 +176,83 @@ Component.prototype.setState = function (partialState, callback) {
 ```ts
 enqueueSetState(inst, payload, callback) {}
 
+```
+
+第七章
+
+mount
+
+```ts
+function mountMemo<T>(nextCreate: () => T, deps: Array<mixed> | void | null): T {
+  // 创建并返回当前hook
+  const hook = mountWorkInProgressHook()
+  const nextDeps = deps === undefined ? null : deps
+  const nextValue = nextCreate()
+  hook.memoizedState = [nextValue, nextDeps]
+  return nextValue
+}
+
+function mountCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
+  const hook = mountWorkInProgressHook()
+  const nextDeps = deps === undefined ? null : deps
+  hook.memoizedState = [callback, nextDeps];
+  return callback
+}
 
 ```
+
+update
+
+```ts
+function updateMemo<T>(
+  nextCreate: () => T,
+  deps: Array<mixed> | void | null,
+): T {
+  // 返回当前hook
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  const prevState = hook.memoizedState;
+
+  if (prevState !== null) {
+    if (nextDeps !== null) {
+      const prevDeps: Array<mixed> | null = prevState[1];
+      // 判断update前后value是否变化
+      if (areHookInputsEqual(nextDeps, prevDeps)) {
+        // 未变化
+        return prevState[0];
+      }
+    }
+  }
+  // 变化，重新计算value
+  const nextValue = nextCreate();
+  hook.memoizedState = [nextValue, nextDeps];
+  return nextValue;
+}
+
+function updateCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
+  // 返回当前hook
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  const prevState = hook.memoizedState;
+
+  if (prevState !== null) {
+    if (nextDeps !== null) {
+      const prevDeps: Array<mixed> | null = prevState[1];
+      // 判断update前后value是否变化
+      if (areHookInputsEqual(nextDeps, prevDeps)) {
+        // 未变化
+        return prevState[0];
+      }
+    }
+  }
+
+  // 变化，将新的callback作为value
+  hook.memoizedState = [callback, nextDeps];
+  return callback;
+}
+```
+
+useMemo和useCallback的差别就是：useMemo返回的上次的值，而后者是返回callback
+
+第八章
+Concurrent 模式是一组 React 的新功能，可帮助应用保持响应，并根据用户的设备性能和网速进行适当的调整。
